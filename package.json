@@ -1,0 +1,29 @@
+{
+  "name": "jackman",
+  "version": "0.0.0",
+  "description": "A Jekyll-style blog engine for Express",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/stuartpb/jackman.git"
+  },
+  "keywords": [
+    "express",
+    "jekyll",
+    "blog"
+  ],
+  "author": "Stuart P. Bentley",
+  "license": "LITL",
+  "dependencies": {
+    "express": "~3.1.0",
+    "yamlhead": "0.0.0",
+    "xdate": "~0.7.0"
+  },
+  "devDependencies": {
+    "marked": "~0.2.8",
+    "jade": "~0.28.1"
+  }
+}
