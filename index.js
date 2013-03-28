@@ -48,7 +48,10 @@ function routraverse(path,params,cb){
     // Construct the regex to match params for
     var keys = [];
     var regex = new RegExp('^' + firsty.replace(/\./g,'\\.').replace(
-      /:(\w+)/g,function(match,key){keys.push(key); return '(.*)';}) + '$');
+      /(\:(\w+)|\*)/g,function(match,key){
+        keys.push(key[0] == ':'? key.slice(1) : null);
+        return '(.*)'
+      ;}) + '$');
 
     fs.exists(staticTo,function(err,doesExist){
       if (err) throw err;
@@ -66,7 +69,7 @@ function routraverse(path,params,cb){
                 newparams[k]=params[k];
               }
               for (var j=0;j<keys.length;j++){
-                newparams[keys[j]] = match[j+1];
+                if (keys[j]) newparams[keys[j]] = match[j+1];
               }
               // Recurse, with the dynamic component replaced with the static
               //   name of this item
