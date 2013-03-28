@@ -94,13 +94,13 @@ function putForAllRoutes(routes,tree,node){
 }
 
 jackman.posts = function(route){
+  var bucket = this.buckets.posts;
+  var tree = this.trees.posts;
+  var routeKeysBucket = this.buckets.routeKeys;
   routraverse(route, this.config, function(path,params){
     var filename = path.slice(path.lastIndexOf('/')+1);
     params.format = params.format || filename.slice(path.lastIndexOf('.')+1);
     params.slug = params.slug || filename.substring(path.lastIndexOf('.'));
-    var bucket = this.buckets.posts;
-    var tree = this.trees.posts;
-    var routeKeysBucket = this.buckets.routeKeys;
     yamlhead(path,function(err,head,body){
       if(err) throw err;
       
@@ -124,6 +124,9 @@ jackman.posts = function(route){
 };
 
 jackman.configs = function(route){
+  var bucket = this.buckets.configs;
+  var tree = this.trees.configs;
+  var routeKeysBucket = this.buckets.routeKeys;
   routraverse(route, this.config, function(path,params){
     //Configs can be either YAML or JSON.
     //Since JSON is a subset of YAML, we use the YAML loader for both.
@@ -137,19 +140,18 @@ jackman.configs = function(route){
     }
 
     var node = {params: params, leaf: config};
-    //Put the view in the posts bucket (having one leaf for each file may seem
-    // kind of lame, but it ain't hurtin' nobody)
-    this.buckets.views.push(node);
-    //Put this post in the posts tree for any existing routes
-    putForAllRoutes(this.buckets.routeKeys,this.trees.views,node);
-    
     //Put the config in the configs bucket
+    bucket.push(node);
     //Put this config in the configs tree for any existing routes
+    putForAllRoutes(routeKeysBucket,tree,node);
   });
   return this;
 };
 
 jackman.views = function(route){
+  var bucket = this.buckets.views;
+  var tree = this.trees.views;
+  var routeKeysBucket = this.buckets.routeKeys;
   routraverse(route, this.config, function(path,params){
     var filename = path.slice(path.lastIndexOf('/')+1);
     var lookups = {filename: path};
@@ -161,9 +163,9 @@ jackman.views = function(route){
     var node = {params: params, leaf: lookups};
     //Put the view in the posts bucket (having one leaf for each file may seem
     // kind of lame, but it ain't hurtin' nobody)
-    this.buckets.views.push(node);
+    bucket.push(node);
     //Put this post in the posts tree for any existing routes
-    putForAllRoutes(this.buckets.routeKeys,this.trees.views,node);
+    putForAllRoutes(routeKeysBucket,tree,node);
   });
   return this;
 };
