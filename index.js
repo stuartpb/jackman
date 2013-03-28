@@ -47,7 +47,7 @@ function routraverse(path,params,cb){
     
     // Construct the regex to match params for
     var keys = [];
-    var regex = new RegExp('^' + firsty.replace(/\./g,'\\.').replace(
+    var regex = new RegExp('^' + firsty[0].replace(/\./g,'\\.').replace(
       /(\:(\w+)|\*)/g,function(match,key){
         keys.push(key[0] == ':'? key.slice(1) : null);
         return '(.*)'
@@ -89,7 +89,7 @@ function routraverse(path,params,cb){
 var bucketNames = ["posts","views","configs"];
 
 function putForAllRoutes(routes,tree,node){
-  routes.forEach(function(i,routeKeys){
+  routes.forEach(function(routeKeys){
     placeInTree(tree,routeKeys,node,0);
   });
 }
@@ -223,7 +223,7 @@ function gatherFromTree(tree,keys,params,i,layers){
     for(var param in params){
       finalObject[param] = params[param];
     }
-    layers.forEach(function(i,subconfig){
+    layers.forEach(function(subconfig){
       for(var param in subconfig){
         finalObject[param] = subconfig[param];
       }
@@ -247,8 +247,8 @@ jackman.route = function(route,view){
   buckets.routeKeys.push(routeKeys);
 
   //populate trees for other buckets
-  bucketNames.forEach(function(i,bucketName){
-    buckets[bucketName].forEach(function(i,object){
+  bucketNames.forEach(function(bucketName){
+    buckets[bucketName].forEach(function(object){
       placeInTree(trees[bucketName],routeKeys,object,0);
     });
   });
