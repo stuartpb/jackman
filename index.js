@@ -53,8 +53,7 @@ function routraverse(path,params,cb){
         return '(.*)'
       ;}) + '$');
 
-    fs.exists(staticTo,function(err,doesExist){
-      if (err) throw err;
+    fs.exists(staticTo,function(doesExist){
       if(doesExist){
         // Get the file listings of the whole static path before that
         fs.readdir(staticTo, function(err,names){
