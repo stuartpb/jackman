@@ -105,13 +105,16 @@ jackman.posts = function(route){
       if(err) throw err;
       
       //Merge params with yamlhead, if it's an object
-      //(if it's somehow something else, I'm not even going to bother
-      //trying to figure out how it was supposed to work)
       if(typeof head == "object"){
         for(var param in head){
           params[param] = head[param];
         }
-      }
+      //If the YAML head is somehow something else, I'm not even going to
+      //bother trying to figure out what it was supposed to be
+      } else head = {};
+  
+      //We're just assuming content is Markdown for now
+      params.content = marked(body);
   
       var node = {params: params, leaf: {head: params, body: body}};
       //Put the post in the posts bucket
@@ -268,9 +271,6 @@ jackman.route = function(route,view){
     for(var param in post.head){
       locals[param] = post.head[param];
     }
-    
-    //We're just assuming content is Markdown for now
-    locals.content = marked(post.body);
 
     //It's at this junction one could check for published status on the
     //locals and call next(), if they were so inclined
