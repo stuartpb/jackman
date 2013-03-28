@@ -19,7 +19,7 @@ var marked = require("marked");
 function routraverse(path,params,cb){
 
   // Find the first path component with variables in the path
-  var firsty = path.match(/[^\/]*:\w+[^\/]*/);
+  var firsty = path.match(/[^\/]*(?:\:\w+|\*)[^\/]*/);
   
   // If there is no variable (the path is singular)
   if(!firsty){
@@ -73,7 +73,7 @@ function routraverse(path,params,cb){
               // Recurse, with the dynamic component replaced with the static
               //   name of this item
               return routraverse(staticTo + names[i] +
-                path.slice(firsty.index + firsty[0].length));
+                path.slice(firsty.index + firsty[0].length),newparams,cb);
             }
           }
         });
