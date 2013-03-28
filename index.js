@@ -18,23 +18,66 @@ var marked = require("marked");
 //- Callback to switch to using for last component of the path (the files).
 function routraverse(path,params,cb){
 
-  // Find the first variable in the routey-path
+  // Find the first path component with variables in the path
+  var firsty = path.match(/[^\/]*:\w+[^\/]*/);
   
-  // If there is no variable and the path points at a file
-  
-    // Call the callback with the absolute path
-  
+  // If there is no variable (the path is singular)
+  if(!firsty){
+    fs.stat(path,function(err,stats){
+      if (err) throw err;
+      
+      // if the path points at a file
+      if(stats.isFile()){
+        // Call the callback with the absolute path
+        return cb(path,params);
+      }
+      // Otherwise, ignore this path (let people include directories
+      //   matching the pattern without having to work around this)
+      
+      //One may ask: should this isFile check be in the traversal
+      //and not the callback? Well, I think so, at least for now. 
+      
+      //I could support something like, say, another level of recursion
+      //if the path ends in a /, but... nah.
+    });
   // If there is a variable
-  
-    // Get the file listings of the whole static path before that
+  } else {
+    //The static path to this variable
+    var staticTo = path.slice(0,firsty.index);
     
-    // For every path under that static path
-    
-    // If it conforms to the form of this dynamic component
-    
-      // Recurse, with the dynamic component replaced with the static
-      //   name of this item
+    // Construct the regex to match params for
+    var keys = [];
+    var regex = new RegExp('^' + firsty.replace(/\./g,'\\.').replace(
+      /:(\w+)/g,function(match,key){keys.push(key); return '(.*)';}) + '$');
 
+    fs.exists(staticTo,function(err,doesExist){
+      if (err) throw err;
+      if(doesExist){
+        // Get the file listings of the whole static path before that
+        fs.readdir(staticTo, function(err,names){
+          if (err) throw err;
+          // For every path under that static path
+          for (var i=0;i<names.length;i++){
+            var match = names[i].match(regex);
+            // If it conforms to the form of this dynamic component
+            if (match) {
+              var newparams = {};
+              for(var k in params){
+                newparams[k]=params[k];
+              }
+              for (var j=0;j<keys.length;j++){
+                newparams[keys[j]] = match[j+1];
+              }
+              // Recurse, with the dynamic component replaced with the static
+              //   name of this item
+              return routraverse(staticTo + names[i] +
+                path.slice(firsty.index + firsty[0].length));
+            }
+          }
+        });
+      }
+    })
+  }
 }
 
 //I wanted to use this to make the equivalent jackman methods for each,
@@ -59,9 +102,13 @@ jackman.posts = function(route){
     yamlhead(path,function(err,head,body){
       if(err) throw err;
       
-      //Merge params with yamlhead
-      for(var param in head){
-        params[param] = head[param];
+      //Merge params with yamlhead, if it's an object
+      //(if it's somehow something else, I'm not even going to bother
+      //trying to figure out how it was supposed to work)
+      if(typeof head == "object"){
+        for(var param in head){
+          params[param] = head[param];
+        }
       }
   
       var node = {params: params, leaf: {head: params, body: body}};
@@ -71,6 +118,7 @@ jackman.posts = function(route){
       putForAllRoutes(routeKeysBucket,tree,node);
     });
   });
+  return this;
 };
 
 jackman.configs = function(route){
@@ -96,6 +144,7 @@ jackman.configs = function(route){
     //Put the config in the configs bucket
     //Put this config in the configs tree for any existing routes
   });
+  return this;
 };
 
 jackman.views = function(route){
@@ -114,6 +163,7 @@ jackman.views = function(route){
     //Put this post in the posts tree for any existing routes
     putForAllRoutes(this.buckets.routeKeys,this.trees.views,node);
   });
+  return this;
 };
 
 function placeInTree(tree,keys,node,i){
@@ -224,8 +274,9 @@ jackman.route = function(route,view){
     res.render(viewFile || view, locals);
 
     //if there's no valid post/view for this route
-    } else next(); //pass it along (a 404 handler will catch it)
+    } else return next(); //pass it along (a 404 handler will catch it)
   });
+  return this;
 };
 
 function Jackman(config){
