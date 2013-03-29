@@ -78,13 +78,10 @@ function routraverse(path,params,cb){
           }
         });
       }
-    })
+    });
   }
 }
 
-//I wanted to use this to make the equivalent jackman methods for each,
-//but then JSHint was all "mep mep mep, use of `this` in a callback!"
-//and I was all "oh screw this"
 var bucketNames = ["posts","views","configs"];
 
 function putForAllRoutes(routes,tree,node){
@@ -169,6 +166,7 @@ jackman.views = function(route){
     bucket.push(node);
     //Put this post in the posts tree for any existing routes
     putForAllRoutes(routeKeysBucket,tree,node);
+    console.log(bucket,tree);
   });
   return this;
 };
@@ -194,7 +192,14 @@ function placeInTree(tree,keys,node,i){
       return tree.branches[keys[i]][node.params[keys[i]]]
         .leaves.push(node.leaf);
     }
-  } //If the object doesn't have one of the route's keys, bail
+  // If the object doesn't have one of the route's keys,
+  // place it on this node
+  
+  // see https://github.com/stuartpb/jackman/wiki/Input-Hierarchy
+  // for a roadmap of how this should be treated down the line
+  } else {
+    return tree.leaves.push(node.leaf);
+  }
 }
 
 function findInTree(tree,keys,params,i){
@@ -214,15 +219,21 @@ function findInTree(tree,keys,params,i){
 }
 
 function gatherFromTree(tree,keys,params,i,layers){
-  var branch = tree.branches[keys[i]] &&
+  layers = layers.concat(tree.leaves);
+  
+  var branch;
+  
+  //Attempt to continue traversal if there are keys left
+  if(i < keys.length) branch = tree.branches[keys[i]] &&
     tree.branches[keys[i]][params[keys[i]]];
-  //If the object has a key for this route
-  if(branch) {
-    layers = layers.concat(branch.leaves);
-  }
-  //If we're at the last switch for this route
-  if(!branch || i >= keys.length-1){
-  //merge all the objects
+
+  //If there are branches yet to traverse
+  if(branch){
+    return gatherFromTree(branch,keys,params,i,layers);
+    
+  //If we're at the last junction for this route
+  } else {
+    //merge all the objects
     var finalObject = {};
     for(var param in params){
       finalObject[param] = params[param];
@@ -233,8 +244,6 @@ function gatherFromTree(tree,keys,params,i,layers){
       }
     });
     return finalObject;
-  } else {
-    return findInTree(branch,keys,params,i+1,layers);
   }
 }
 
@@ -260,6 +269,7 @@ jackman.route = function(route,view){
   this.app.get(route,function(req,res,next){
     var post = findInTree(trees.posts,routeKeys,req.params,0);
     var views = gatherFromTree(trees.views,routeKeys,req.params,0,[]);
+    console.log(views);
     var viewFile = views[view];
 
     //if there's a valid post for this route
@@ -280,6 +290,7 @@ jackman.route = function(route,view){
     //if there's no valid post/view for this route
     } else return next(); //pass it along (a 404 handler will catch it)
   });
+  console.log(this.trees.views);
   return this;
 };
 
